@@ -1,0 +1,42 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # 1) Construir la imagen Docker
+  - id: 'Build image'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '--platform=linux/amd64',
+        '-t', 'gcr.io/$PROJECT_ID/dys-sync-stock:$SHORT_SHA',
+        '.'
+      ]
+
+  # 2) Push al Container Registry
+  - id: 'Push image'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'push',
+        'gcr.io/$PROJECT_ID/dys-sync-stock:$SHORT_SHA'
+      ]
+
+  # 3) Deploy a Cloud Run, sin set-env-vars
+  - id: 'Deploy to Cloud Run'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run deploy dys-sync-stock \
+          --image gcr.io/$PROJECT_ID/dys-sync-stock:$SHORT_SHA \
+          --region=us-central1 \
+          --platform=managed \
+          --service-account=sa-dys-sync-stock@${PROJECT_ID}.iam.gserviceaccount.com \
+          --allow-unauthenticated \
+          --port=8080 \
+          --timeout=300s
+
+images:
+  - 'gcr.io/$PROJECT_ID/dys-sync-stock:$SHORT_SHA'
