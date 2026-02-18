@@ -22,18 +22,19 @@ export const makeSyncStockUseCase = ({
       const iLocation   = idx('id_caja');
       const iTitle      = idx('titulo');
   
+      const normalizeCell = value => (value == null ? '' : String(value).trim());
       const seen       = new Set();
-      const validItems = [];
+      const itemsBySku = new Map();
       const errors     = [];
   
       dataRows.forEach((row, i) => {
         const excelRow = i + 2;
-        const rawSku   = row[iSku]?.trim();
-        const rawStock = row[iStockTotal]?.trim();
-        const rawLoc   = row[iLocation]?.trim();
-  
-        if (!rawSku || rawSku.length < 6) {
-          errors.push({ row: excelRow, message: 'SKU vacío o menor a 6 caracteres' });
+        const rawSku   = normalizeCell(row[iSku]);
+        const rawStock = normalizeCell(row[iStockTotal]);
+        const rawLoc   = normalizeCell(row[iLocation]);
+
+        if (!rawSku) {
+          errors.push({ row: excelRow, message: 'SKU vacío' });
           return;
         }
         if (!rawStock || isNaN(Number(rawStock))) {
@@ -51,18 +52,31 @@ export const makeSyncStockUseCase = ({
         }
         seen.add(key);
   
-        validItems.push({
+        const item = {
           sku:      Number(rawSku),
-          title:    row[iTitle] || '',
+          title:    normalizeCell(row[iTitle]),
           stock:    Number(rawStock),
           location: rawLoc
-        });
+        };
+        if (!itemsBySku.has(item.sku)) {
+          itemsBySku.set(item.sku, []);
+        }
+        itemsBySku.get(item.sku).push(item);
       });
-  
-      console.log(`[SyncStock] Válidos: ${validItems.length}, ignorados: ${errors.length}`);
-  
-      // Bulk upsert
-      await stockItemRepository.bulkUpsert(validItems);
+
+      const totalItems = Array.from(itemsBySku.values()).reduce((acc, items) => acc + items.length, 0);
+      console.log(`[SyncStock] Válidos: ${totalItems}, ignorados: ${errors.length}`);
+
+      // Reemplazo total por SKU (Sheets es fuente de verdad)
+      const skusInSheet = Array.from(itemsBySku.keys());
+      if (skusInSheet.length === 0) {
+        console.warn('[SyncStock] Snapshot vacío; se omite deleteNotInSkus para evitar borrado total.');
+      } else {
+        await stockItemRepository.deleteNotInSkus(skusInSheet);
+      }
+      for (const [sku, items] of itemsBySku) {
+        await stockItemRepository.replaceBySku(sku, items);
+      }
   
       // Cálculo de variación global (contra el último resumen guardado)
       const currentTotal = await stockItemRepository.getTotalStock();

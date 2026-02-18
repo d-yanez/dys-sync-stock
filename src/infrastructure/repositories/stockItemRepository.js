@@ -33,6 +33,40 @@ class StockItemRepository {
   }
 
   /**
+   * Reemplaza completamente las ubicaciones de un SKU.
+   * @param {Number} sku
+   * @param {Array<{ sku: Number, title: String, stock: Number, location: String }>} items
+   * @returns {Promise<Object>} Resultado de la inserción
+   */
+  async replaceBySku(sku, items) {
+    console.log(`[StockItemRepository] replaceBySku iniciado para SKU ${sku} con ${items.length} ítems`);
+    await StockItemModel.deleteMany({ sku });
+
+    if (items.length === 0) {
+      return { insertedCount: 0 };
+    }
+
+    const now = new Date();
+    const docs = items.map(item => ({ ...item, lastUpdate: now }));
+    const result = await StockItemModel.insertMany(docs, { ordered: false });
+    console.log(`[StockItemRepository] replaceBySku completado → inserted: ${result.length}`);
+    return result;
+  }
+
+  /**
+   * Elimina documentos cuyo SKU no esté en el snapshot actual.
+   * @param {Number[]} skus
+   * @returns {Promise<Object>} Resultado de la eliminación
+   */
+  async deleteNotInSkus(skus) {
+    const hasSkus = Array.isArray(skus) && skus.length > 0;
+    const filter = hasSkus ? { sku: { $nin: skus } } : {};
+    const result = await StockItemModel.deleteMany(filter);
+    console.log(`[StockItemRepository] deleteNotInSkus completado → deleted: ${result.deletedCount}`);
+    return result;
+  }
+
+  /**
    * Obtiene la suma total de todo el stock.
    * Útil para cálculo de variación global.
    * @returns {Promise<Number>}
