@@ -26,7 +26,7 @@ export const syncController = {
       return res.status(500).json({ success: false, message: error.message });
     }
 
-    const { previousTotal, currentTotal, percentualChange, errors } = result;
+    const { previousTotal, currentTotal, percentualChange, errors, durationMs } = result;
 
     // 1) Si hay errores, llamar al controlador de revisión
     if (errors.length > 0) {
@@ -49,7 +49,8 @@ export const syncController = {
       `Fecha:            ${timestamp}\n` +
       `Total anterior:   ${previousTotal}\n` +
       `Total actual:     ${currentTotal}\n` +
-      `Variación diaria: ${percentualChange.toFixed(2)}%` +
+      `Variación diaria: ${percentualChange.toFixed(2)}%\n` +
+      `Duración:         ${durationMs} ms` +
       `</pre>`;
 
     try {
@@ -58,6 +59,7 @@ export const syncController = {
       console.error('[SyncController] No se pudo notificar a Telegram:', telErr);
     }
 
-    return res.json({ success: true, previousTotal, currentTotal, percentualChange, errorsCount: errors.length });
+    console.log(`[SyncController] Duración total: ${durationMs} ms`);
+    return res.json({ success: true, previousTotal, currentTotal, percentualChange, durationMs, errorsCount: errors.length });
   }
 };

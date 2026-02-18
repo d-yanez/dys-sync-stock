@@ -54,6 +54,29 @@ class StockItemRepository {
   }
 
   /**
+   * Reemplaza completamente las ubicaciones de un conjunto de SKUs en una sola pasada.
+   * @param {Number[]} skus
+   * @param {Array<{ sku: Number, title: String, stock: Number, location: String }>} items
+   * @returns {Promise<Object>} Resultado de la inserción
+   */
+  async replaceBySkus(skus, items) {
+    console.log(
+      `[StockItemRepository] replaceBySkus iniciado para ${skus.length} SKUs con ${items.length} ítems`
+    );
+    await StockItemModel.deleteMany({ sku: { $in: skus } });
+
+    if (items.length === 0) {
+      return { insertedCount: 0 };
+    }
+
+    const now = new Date();
+    const docs = items.map(item => ({ ...item, lastUpdate: now }));
+    const result = await StockItemModel.insertMany(docs, { ordered: false });
+    console.log(`[StockItemRepository] replaceBySkus completado → inserted: ${result.length}`);
+    return result;
+  }
+
+  /**
    * Elimina documentos cuyo SKU no esté en el snapshot actual.
    * @param {Number[]} skus
    * @returns {Promise<Object>} Resultado de la eliminación

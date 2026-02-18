@@ -6,6 +6,7 @@ export const makeSyncStockUseCase = ({
     googleSheetsService 
   }) => ({
     async execute() {
+      const startedAt = Date.now();
       console.log(`[SyncStock] Inicio: ${new Date().toISOString()}`);
   
       const allRows = await googleSheetsService.readSheet('rev_stock_full!A1:R');
@@ -37,6 +38,11 @@ export const makeSyncStockUseCase = ({
           errors.push({ row: excelRow, message: 'SKU vacío' });
           return;
         }
+        const skuNumber = Number(rawSku);
+        if (!Number.isFinite(skuNumber)) {
+          errors.push({ row: excelRow, message: 'SKU no es numérico' });
+          return;
+        }
         if (!rawStock || isNaN(Number(rawStock))) {
           errors.push({ row: excelRow, message: 'stock_total no es numérico o está vacío' });
           return;
@@ -53,7 +59,7 @@ export const makeSyncStockUseCase = ({
         seen.add(key);
   
         const item = {
-          sku:      Number(rawSku),
+          sku:      skuNumber,
           title:    normalizeCell(row[iTitle]),
           stock:    Number(rawStock),
           location: rawLoc
@@ -70,12 +76,10 @@ export const makeSyncStockUseCase = ({
       // Reemplazo total por SKU (Sheets es fuente de verdad)
       const skusInSheet = Array.from(itemsBySku.keys());
       if (skusInSheet.length === 0) {
-        console.warn('[SyncStock] Snapshot vacío; se omite deleteNotInSkus para evitar borrado total.');
+        console.warn('[SyncStock] Snapshot vacío; se omite limpieza global para evitar borrado total.');
       } else {
         await stockItemRepository.deleteNotInSkus(skusInSheet);
-      }
-      for (const [sku, items] of itemsBySku) {
-        await stockItemRepository.replaceBySku(sku, items);
+        await stockItemRepository.replaceBySkus(skusInSheet, Array.from(itemsBySku.values()).flat());
       }
   
       // Cálculo de variación global (contra el último resumen guardado)
@@ -102,8 +106,9 @@ export const makeSyncStockUseCase = ({
         percentualChange
       });
   
-      console.log('[SyncStock] Sincronización completada.');
-      return { previousTotal, currentTotal, percentualChange, errors };
+      const durationMs = Date.now() - startedAt;
+      console.log(`[SyncStock] Sincronización completada en ${durationMs} ms.`);
+      return { previousTotal, currentTotal, percentualChange, errors, durationMs };
     }
   });
   
