@@ -11,6 +11,14 @@ class SummaryChangeRepository {
     const doc = new SummaryChangeModel(data);
     return await doc.save();
   }
+
+  /**
+   * Obtiene el último resumen guardado (por fecha descendente).
+   * @returns {Promise<{ date: Number, previous: Number, current: Number, percentualChange: Number } | null>}
+   */
+  async getLast() {
+    return await SummaryChangeModel.findOne({}).sort({ date: -1 }).lean();
+  }
 }
 
 export const summaryChangeRepository = new SummaryChangeRepository();

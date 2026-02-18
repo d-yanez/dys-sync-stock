@@ -64,3 +64,24 @@ Este servicio realiza:
    npm run dev
    curl -X POST http://localhost:8080/sync-stock
 
+3. Instalación y ejecución local
+  ```bash
+    dys-sync-stock/
+    ├── src/
+    │   ├── domain/
+    │   │   └── repositories/
+    │   ├── useCases/
+    │   ├── infrastructure/
+    │   │   ├── config/
+    │   │   ├── controllers/
+    │   │   ├── models/
+    │   │   ├── repositories/
+    │   │   ├── routes/
+    │   │   └── services/
+    │   └── app.js
+    ├── credentials/       # JSON de service account (gitignored)
+    ├── .env.example
+    ├── Dockerfile
+    ├── cloudbuild.yaml
+    └── package.json
+

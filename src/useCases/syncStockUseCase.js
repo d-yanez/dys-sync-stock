@@ -64,9 +64,10 @@ export const makeSyncStockUseCase = ({
       // Bulk upsert
       await stockItemRepository.bulkUpsert(validItems);
   
-      // Cálculo de variación global
-      const previousTotal = await stockItemRepository.getTotalStock();
-      const currentTotal  = await stockItemRepository.getTotalStock();
+      // Cálculo de variación global (contra el último resumen guardado)
+      const currentTotal = await stockItemRepository.getTotalStock();
+      const lastSummary = await summaryChangeRepository.getLast();
+      const previousTotal = lastSummary?.current ?? currentTotal;
       const percentualChange = previousTotal === 0
         ? 0
         : ((currentTotal - previousTotal) / previousTotal) * 100;
