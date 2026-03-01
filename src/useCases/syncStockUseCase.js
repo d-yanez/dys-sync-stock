@@ -22,6 +22,7 @@ export const makeSyncStockUseCase = ({
       const iStockTotal = idx('stock_total');
       const iLocation   = idx('id_caja');
       const iTitle      = idx('titulo');
+      const iStockItemId = idx('ID - NO EDITAR');
   
       const normalizeCell = value => (value == null ? '' : String(value).trim());
       const seen       = new Set();
@@ -33,6 +34,12 @@ export const makeSyncStockUseCase = ({
         const rawSku   = normalizeCell(row[iSku]);
         const rawStock = normalizeCell(row[iStockTotal]);
         const rawLoc   = normalizeCell(row[iLocation]);
+        const rawStockItemId = normalizeCell(row[iStockItemId]);
+
+        if (!rawStockItemId) {
+          errors.push({ row: excelRow, message: 'ID - NO EDITAR vacío' });
+          return;
+        }
 
         if (!rawSku) {
           errors.push({ row: excelRow, message: 'SKU vacío' });
@@ -59,6 +66,7 @@ export const makeSyncStockUseCase = ({
         seen.add(key);
   
         const item = {
+          stockItemId: rawStockItemId,
           sku:      skuNumber,
           title:    normalizeCell(row[iTitle]),
           stock:    Number(rawStock),

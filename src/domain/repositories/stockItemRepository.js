@@ -1,6 +1,7 @@
 
 /**
  * @typedef {Object} StockItemData
+ * @property {String} stockItemId
  * @property {Number} sku
  * @property {String} title
  * @property {Number} stock

@@ -3,7 +3,7 @@ import { StockItemModel } from '../models/stockItemModel.js';
 class StockItemRepository {
   /**
    * Inserta o actualiza en bulk un array de items.
-   * @param {Array<{ sku: Number, title: String, stock: Number, location: String }>} items
+   * @param {Array<{ stockItemId: String, sku: Number, title: String, stock: Number, location: String }>} items
    * @returns {Promise<Object>} Resultado de bulkWrite
    */
   async bulkUpsert(items) {
@@ -16,6 +16,7 @@ class StockItemRepository {
             title:      item.title,
             stock:      item.stock,
             location:   item.location,
+            stockItemId:item.stockItemId,
             lastUpdate: new Date()
           }
         },
@@ -35,7 +36,7 @@ class StockItemRepository {
   /**
    * Reemplaza completamente las ubicaciones de un SKU.
    * @param {Number} sku
-   * @param {Array<{ sku: Number, title: String, stock: Number, location: String }>} items
+   * @param {Array<{ stockItemId: String, sku: Number, title: String, stock: Number, location: String }>} items
    * @returns {Promise<Object>} Resultado de la inserción
    */
   async replaceBySku(sku, items) {
@@ -56,7 +57,7 @@ class StockItemRepository {
   /**
    * Reemplaza completamente las ubicaciones de un conjunto de SKUs en una sola pasada.
    * @param {Number[]} skus
-   * @param {Array<{ sku: Number, title: String, stock: Number, location: String }>} items
+   * @param {Array<{ stockItemId: String, sku: Number, title: String, stock: Number, location: String }>} items
    * @returns {Promise<Object>} Resultado de la inserción
    */
   async replaceBySkus(skus, items) {

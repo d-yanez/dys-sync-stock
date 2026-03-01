@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const stockItemSchema = new mongoose.Schema({
+  stockItemId: {
+    type: String,
+    required: true
+  },
   sku: {
     type: Number,
     required: true
@@ -27,5 +31,7 @@ const stockItemSchema = new mongoose.Schema({
 
 // Índice compuesto para garantizar unicidad por sku+location
 stockItemSchema.index({ sku: 1, location: 1 }, { unique: true });
+// Índice para búsquedas por ID de fila en Google Sheets
+stockItemSchema.index({ stockItemId: 1 });
 
 export const StockItemModel = mongoose.model('StockItem', stockItemSchema);
